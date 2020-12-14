@@ -1,0 +1,106 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using LittleListApp.Services;
+using LittleListApp.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+
+namespace LittleListApp.Controllers
+{
+    [Authorize]
+	public class LListController : Controller
+    {
+        private readonly ILListItemService _LListItemService;
+        private readonly UserManager<IdentityUser> _userManager;
+
+        public LListController(ILListItemService LListItemService,
+            UserManager<IdentityUser> userManager)
+        {
+             _LListItemService = LListItemService;
+             _userManager = userManager;
+        }
+     
+        //private readonly ILListItemService _LListItemService;
+
+        //public LListController(ILListItemService LListItemService)
+        //{
+        //    _LListItemService = LListItemService;
+        //}
+        public async Task<IActionResult> Index()
+        {
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
+
+            var items = await _LListItemService.GetIncompleteItemsAsync(currentUser);
+
+            var model = new LListViewModel()
+            {
+                Items = items
+            };
+
+            return View(model);
+            //
+        }
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddItem(LListItem newItem)
+        {
+            if (!ModelState.IsValid)
+            {
+                return RedirectToAction("Index");
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
+
+            var successful = await _LListItemService.AddItemAsync(newItem, currentUser);
+            if (!successful)
+            {
+                return BadRequest("Could not add item.");
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkDone(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                return RedirectToAction("Index");
+            }
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
+
+            var successful = await _LListItemService.MarkDoneAsync(id, currentUser);
+            if (!successful)
+            {
+                return BadRequest("Could not mark item as done.");
+            }
+
+            return RedirectToAction("Index");
+        }
+
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CheckMark(Guid id)
+        {
+            if (id == Guid.Empty)
+            {
+                return RedirectToAction("Index");
+            }
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null) return Challenge();
+
+            var successful = await _LListItemService.CheckMarkAsync(id, currentUser);
+            if (!successful)
+            {
+                return BadRequest("Could not mark item as done.");
+            }
+
+            return RedirectToAction("Index");
+        }
+    }
+}

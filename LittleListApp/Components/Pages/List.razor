@@ -1,0 +1,44 @@
+﻿@using LittleListApp.Models
+@using Humanizer
+
+
+
+<div class="panel panel-default LList-panel">
+    <div class="panel-heading">List</div>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <td>Remove</td>
+                <td>Item</td>
+                <td>Quantity</td>
+                <td>Time Added</td>
+            </tr>
+        </thead>
+
+        @foreach (var item in Items)
+        {
+            <tr>
+                <td>
+                    <form asp-action="MarkDone" method="POST">
+                        <input type="checkbox" class="done-checkbox" />
+                        <input type="hidden" name="id" value="@item.Id" />
+                    </form>
+                </td>
+                <td>@item.Title</td>
+                <td>@item.Quantity</td>
+                <td>@item.DueAt.Humanize()</td>
+            </tr>
+        }
+    </table>
+
+    <div class="panel-footer add-item-form">
+        <!--ADD ITEM FORM-->
+        Html.PartialAsync("AddItemPartial", new LListItem())
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public LListItem[] Items { get; set; }
+}
